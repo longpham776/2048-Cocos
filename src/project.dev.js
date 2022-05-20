@@ -1083,6 +1083,7 @@ window.__require = function e(t, n, r) {
     "use strict";
     cc._RF.push(module, "eee7feFWTtEsqZiPatjGRZb", "StartGame");
     "use strict";
+    var Emitter = require("mEmitter");
     var user = require("User");
     var users = [];
     cc.Class({
@@ -1107,41 +1108,19 @@ window.__require = function e(t, n, r) {
         this.logo.node.runAction(cc.moveBy(1, 0, 100));
       },
       createUser: function createUser() {
-        var arrUsers = JSON.parse(cc.sys.localStorage.getItem("users"));
-        if (arrUsers) {
-          if (arrUsers) {
-            users = arrUsers;
-            var _newUser = new user();
-            _newUser.name = this.username.string;
-            _newUser.score = 0;
-            users.push(_newUser);
-            cc.sys.localStorage.setItem("users", JSON.stringify(users));
-          }
-        } else {
-          var newUser = new user();
-          newUser.name = this.username.string;
-          newUser.score = 0;
-          users.push(newUser);
-          cc.sys.localStorage.setItem("users", JSON.stringify(users));
-        }
+        var newUser = new user();
+        newUser.name = this.username.string;
+        newUser.score = 0;
+        users.push(newUser);
+        Emitter.instance.emit("users", users);
       },
       validateEditBox: function validateEditBox() {
-        var arrUsers = JSON.parse(cc.sys.localStorage.getItem("users"));
-        cc.log(arrUsers);
-        if (arrUsers) {
-          for (var i = 0; i < arrUsers.length; i++) if (arrUsers[i].name == this.nameEditBox.string) {
-            this.alertMessageBox("Your name have taken!");
-            return false;
-          }
-          if (this.nameEditBox.string) {
-            this._flag = false;
-            return true;
-          }
-          this.alertMessageBox("Please enter your name!");
-          return false;
+        if (this.nameEditBox.string) {
+          this._flag = false;
+          return true;
         }
-        this._flag = false;
-        return true;
+        this.alertMessageBox("Please enter your name!");
+        return false;
       },
       alertMessageBox: function alertMessageBox(value) {
         var _this = this;
@@ -1217,15 +1196,15 @@ window.__require = function e(t, n, r) {
     });
     cc._RF.pop();
   }, {
-    User: "User"
+    User: "User",
+    mEmitter: "mEmitter"
   } ],
   UserBoard: [ function(require, module, exports) {
     "use strict";
     cc._RF.push(module, "540a4VudVdN9L17owAaluqg", "UserBoard");
     "use strict";
     var Emitter = require("mEmitter");
-    var emitName = require("emitName");
-    var sortArr = [];
+    var users = [];
     cc.Class({
       extends: cc.Component,
       properties: {
@@ -1240,6 +1219,11 @@ window.__require = function e(t, n, r) {
         _flag: false
       },
       onLoad: function onLoad() {
+        Emitter.instance = new Emitter();
+        Emitter.instance.registerEvent("users", function(value) {
+          cc.log(value);
+          users = value;
+        }, this);
         this.sortScore();
         this.addLeadBoard();
         this.nameOnBoardGame.string = this.username.string;
@@ -1249,33 +1233,20 @@ window.__require = function e(t, n, r) {
         cc.log(value);
         this.username.string = value;
       },
-      sortScore: function sortScore() {
-        var data = JSON.parse(cc.sys.localStorage.getItem("users"));
-        null != data && (data = data.sort(function(a, b) {
-          return b.score - a.score;
-        }));
-        cc.sys.localStorage.setItem("users", JSON.stringify(data));
-      },
+      sortScore: function sortScore() {},
       updateScore: function updateScore() {
-        var arrUsers = JSON.parse(cc.sys.localStorage.getItem("users"));
-        if (!arrUsers) return;
-        for (var i = 0; i < arrUsers.length; i++) arrUsers[i].name == this.nameOnBoardGame.string && (arrUsers[i].score = parseInt(this.score.string));
-        cc.sys.localStorage.setItem("users", JSON.stringify(arrUsers));
+        for (var i = 0; i < users.length; i++) users[i].name == this.nameOnBoardGame.string && (users[i].score = parseInt(this.score.string));
       },
       addLeadBoard: function addLeadBoard() {
-        var arrUsers = JSON.parse(cc.sys.localStorage.getItem("users"));
-        if (!arrUsers) return;
-        if (arrUsers) {
-          this.content.removeAllChildren();
-          for (var i = 0; i < arrUsers.length; i++) {
-            cc.log(arrUsers[i]);
-            var item = cc.instantiate(this.userList);
-            item.parent = this.content;
-            item.y = -10 - 20 * i;
-            item.getChildByName("username").getComponent(cc.Label).string = arrUsers[i].name;
-            item.getChildByName("score").getComponent(cc.Label).string = arrUsers[i].score;
-            this.content.height += 2;
-          }
+        this.content.removeAllChildren();
+        for (var i = 0; i < users.length; i++) {
+          cc.log(users[i]);
+          var item = cc.instantiate(this.userList);
+          item.parent = this.content;
+          item.y = -10 - 20 * i;
+          item.getChildByName("username").getComponent(cc.Label).string = users[i].name;
+          item.getChildByName("score").getComponent(cc.Label).string = users[i].score;
+          this.content.height += 2;
         }
       },
       loadLeadBoard: function loadLeadBoard() {
@@ -1308,7 +1279,6 @@ window.__require = function e(t, n, r) {
     });
     cc._RF.pop();
   }, {
-    emitName: "emitName",
     mEmitter: "mEmitter"
   } ],
   User: [ function(require, module, exports) {
